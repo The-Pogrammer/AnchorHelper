@@ -63,7 +63,7 @@ namespace Celeste.Mod.AnchorHelper
                     AnchorPosition = null;
                     Visible = false;
                 }
-                else
+                else if (player.OnSafeGround)
                 {
                     PlaceAnchor(player);
                 }
@@ -85,7 +85,12 @@ namespace Celeste.Mod.AnchorHelper
             {
                 player.Position = feetPos - new Vector2(player.Width / 2f, player.Height);
 
-                player.Hair.MoveHairBy(player.Position - player.Position);
+                player.Hair.MoveHairBy(Vector2.Zero);
+                player.Leader.PastPoints.Clear();
+                for (int i = 0; i < 3; i++)
+                {
+                    player.Leader.PastPoints.Add(player.TopCenter + Vector2.UnitX * -16 * ((int)player.Facing));
+                }
             }
         }
 
