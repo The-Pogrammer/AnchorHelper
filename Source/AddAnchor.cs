@@ -1,26 +1,25 @@
-﻿using Monocle;
-using Microsoft.Xna.Framework;
-using Celeste;
+﻿using Celeste;
 using Celeste.Mod.Entities;
+using Microsoft.Xna.Framework;
+using Monocle;
 
 namespace Celeste.Mod.AnchorHelper
 {
     [CustomEntity("AnchorHelper/AddAnchor")]
     public class AddAnchor : Trigger
     {
-        public AddAnchor(EntityData data, Vector2 offset)
-            : base(data, offset)
-        {
-        }
+        public AddAnchor(EntityData data, Vector2 offset) : base(data, offset) { }
 
         public override void OnEnter(Player player)
         {
             base.OnEnter(player);
 
-            if (AnchorManager.Instance == null)
+            AnchorHelperModule.Session.ManagerDeleted = false;
+
+            var manager = SceneAs<Level>().Tracker.GetEntity<AnchorManager>();
+            if (manager == null)
             {
-                var manager = new AnchorManager();
-                SceneAs<Level>().Add(manager);
+                SceneAs<Level>().Add(new AnchorManager());
             }
         }
     }

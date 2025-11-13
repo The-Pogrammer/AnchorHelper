@@ -1,37 +1,55 @@
 ﻿using System;
+using Celeste;
+using Celeste.Mod;
+using Celeste.Mod.Entities;
+using Microsoft.Xna.Framework;
+using Monocle;
+using System.Linq;
 
-namespace Celeste.Mod.AnchorHelper;
+namespace Celeste.Mod.AnchorHelper
+{
 
-public class AnchorHelperModule : EverestModule {
-    public static AnchorHelperModule Instance { get; private set; }
+    public class AnchorHelperModule : EverestModule
+    {
+        public static AnchorHelperModule Instance { get; private set; }
 
-    public override Type SettingsType => typeof(AnchorHelperModuleSettings);
-    public static AnchorHelperModuleSettings Settings => (AnchorHelperModuleSettings) Instance._Settings;
+        public override Type SettingsType => typeof(AnchorHelperModuleSettings);
+        public static AnchorHelperModuleSettings Settings => (AnchorHelperModuleSettings)Instance._Settings;
 
-    public override Type SessionType => typeof(AnchorHelperModuleSession);
-    public static AnchorHelperModuleSession Session => (AnchorHelperModuleSession) Instance._Session;
+        public override Type SessionType => typeof(AnchorHelperModuleSession);
+        public static AnchorHelperModuleSession Session => (AnchorHelperModuleSession)Instance._Session;
 
-    public override Type SaveDataType => typeof(AnchorHelperModuleSaveData);
-    public static AnchorHelperModuleSaveData SaveData => (AnchorHelperModuleSaveData) Instance._SaveData;
+        public override Type SaveDataType => typeof(AnchorHelperModuleSaveData);
+        public static AnchorHelperModuleSaveData SaveData => (AnchorHelperModuleSaveData)Instance._SaveData;
 
-    public AnchorHelperModule() {
-        Instance = this;
+        public const string LoggerTag = nameof(AnchorHelperModule);
+
+        public AnchorHelperModule()
+        {
+            Instance = this;
 #if DEBUG
-        // debug builds use verbose logging
-        Logger.SetLogLevel(nameof(AnchorHelperModule), LogLevel.Verbose);
+            Logger.SetLogLevel(LoggerTag, LogLevel.Verbose);
 #else
-        // release builds use info logging to reduce spam in log files
-        Logger.SetLogLevel(nameof(AnchorHelperModule), LogLevel.Info);
+            Logger.SetLogLevel(LoggerTag, LogLevel.Info);
 #endif
-    }
+        }
 
-    public const string LoggerTag = nameof(AnchorHelperModule);
+        public override void Load()
+        {
+            Everest.Events.LevelLoader.OnLoadingThread += AddAnchorManager;
+        }
 
-    public override void Load() {
-        // TODO: apply any hooks that should always be active
-    }
+        public override void Unload()
+        {
+            Everest.Events.LevelLoader.OnLoadingThread -= AddAnchorManager;
+        }
 
-    public override void Unload() {
-        // TODO: unapply any hooks applied in Load()
+        private void AddAnchorManager(Level level)
+        {
+            if (!Session.ManagerDeleted && !level.Tracker.GetEntities<AnchorManager>().Any())
+            {
+                level.Add(new AnchorManager());
+            }
+        }
     }
 }

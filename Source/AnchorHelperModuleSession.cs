@@ -1,5 +1,11 @@
-namespace Celeste.Mod.AnchorHelper;
+using Celeste.Mod;
+using Microsoft.Xna.Framework;
 
-public class AnchorHelperModuleSession : EverestModuleSession {
-
+namespace Celeste.Mod.AnchorHelper
+{
+    public class AnchorHelperModuleSession : EverestModuleSession
+    {
+        public bool ManagerDeleted = false;
+        public Vector2? AnchorPosition = null;
+    }
 }

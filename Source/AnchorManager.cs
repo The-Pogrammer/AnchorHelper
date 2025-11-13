@@ -1,19 +1,24 @@
-﻿using Celeste.Mod.Entities;
+﻿using Celeste;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.AnchorHelper
 {
+
     [CustomEntity("AnchorHelper/AnchorManager")]
     [Tracked(true)]
     public class AnchorManager : Entity
     {
-        public static AnchorManager Instance;
-
-        public Vector2? AnchorPosition;
         private Image anchorImage;
 
-        public bool HasAnchor => AnchorPosition != null;
+        public bool HasAnchor => AnchorHelperModule.Session.AnchorPosition != null;
+
+        public Vector2? AnchorPosition
+        {
+            get => AnchorHelperModule.Session.AnchorPosition;
+            set => AnchorHelperModule.Session.AnchorPosition = value;
+        }
 
         public AnchorManager() : base(Vector2.Zero)
         {
@@ -21,76 +26,67 @@ namespace Celeste.Mod.AnchorHelper
             Depth = Depths.Top;
             Collidable = false;
             Visible = false;
-            Instance = this;
 
-            // Loads a static image from Graphics/Atlases/Gameplay/AnchorHelper/anchor.png
             anchorImage = new Image(GFX.Game["anchor"]);
             anchorImage.CenterOrigin();
             Add(anchorImage);
-        }
-
-        public override void Update()
-        {
-            base.Update();
-
-            Player player = SceneAs<Level>().Tracker.GetEntity<Player>();
-            if (AnchorHelperModule.Settings.AnchorAndRecall.Pressed && player != null)
-            {
-                AnchorHelperModule.Settings.AnchorAndRecall.ConsumePress();
-                if (HasAnchor)
-                {
-                    Recall(player);
-                    AnchorPosition = null;
-                }
-                else
-                {
-                    PlaceAnchor(player);
-                }
-                Visible = HasAnchor;
-            }
         }
 
         public override void Added(Scene scene)
         {
             base.Added(scene);
 
-            if (Instance != null && Instance != this)
+            if (AnchorPosition is Vector2 pos)
             {
-                RemoveSelf();
-                return;
+                anchorImage.Position = pos;
+                Visible = true;
             }
-
-            Instance = this;
         }
 
-        public override void Removed(Scene scene)
+        public override void Update()
         {
-            base.Removed(scene);
-            if (Instance == this)
-                Instance = null;
+            base.Update();
+
+            if (AnchorHelperModule.Session.ManagerDeleted)
+                return;
+
+            Player player = SceneAs<Level>().Tracker.GetEntity<Player>();
+            if (player == null) return;
+
+            if (AnchorHelperModule.Settings.AnchorAndRecall.Pressed)
+            {
+                AnchorHelperModule.Settings.AnchorAndRecall.ConsumePress();
+
+                if (HasAnchor)
+                {
+                    Recall(player);
+                    AnchorPosition = null;
+                    Visible = false;
+                }
+                else
+                {
+                    PlaceAnchor(player);
+                }
+            }
         }
 
         public void PlaceAnchor(Player player)
         {
-            AnchorPosition = player.Position; // bottom-middle of hitbox
-            Position = player.Center;
-            Logger.Log(AnchorHelperModule.LoggerTag, "anchor placed");
-        }
+            Vector2 bottomCenter = player.Position + new Vector2(player.Width / 2f, player.Height);
+            AnchorPosition = bottomCenter;
 
+            anchorImage.Position = player.Center;
+            Visible = true;
+        }
 
         public void Recall(Player player)
         {
-            if (AnchorPosition is Vector2 anchor) {
-                player.Position = anchor;
-                player.Hair.MoveHairBy(Position);
+            if (AnchorPosition is Vector2 feetPos)
+            {
+                player.Position = feetPos - new Vector2(player.Width / 2f, player.Height);
+
+                player.Hair.MoveHairBy(player.Position - player.Position);
             }
-        }
-
-
-        public override void SceneEnd(Scene scene)
-        {
-            base.SceneEnd(scene);
-            Instance = null;
         }
 
     }
